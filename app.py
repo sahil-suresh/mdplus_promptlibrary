@@ -124,6 +124,9 @@ with tab_view:
                 return sum(r['rating'] for r in rating_data.data) / rating_data.count
             return 0
         
+        
+        
+        
         prompts_df['avg_rating'] = prompts_df['id'].apply(calculate_avg_rating)
         
         prompts_df = prompts_df.sort_values(by='avg_rating', ascending=False).reset_index(drop=True)
@@ -182,12 +185,16 @@ with tab_view:
                                         new_rating = i
                                         if new_rating == user_vote: new_rating = 0
                                         
-                                        conn.client.table("votes").upsert({
-                                            "prompt_id": row['id'],
-                                            "user_id": st.session_state.user_id,
-                                            "rating": new_rating
-                                        }).execute()
+                                        conn.client.table("votes").upsert(
+                                            {
+                                                "prompt_id": row['id'],
+                                                "user_id": st.session_state.user_id,
+                                                "rating": new_rating
+                                            },
+                                            on_conflict="prompt_id,user_id"
+                                        ).execute()
                                         st.rerun()
+                                        
                         else:
                             st.warning("Login to vote!")
 
