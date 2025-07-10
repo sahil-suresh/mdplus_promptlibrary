@@ -163,6 +163,8 @@ with tab_view:
             for index, row in filtered_df.iterrows():
                 with st.expander(f"**{row['title']}** (Category: {row['category']})", expanded=False):
                     st.markdown(f"*Submitted by: {row['username']}*")
+                    if row['model']:
+                        st.markdown(f"**Model:** {row['model']}")
                     if row['tags']:
                         st.markdown(f"**Tags:** `{row['tags']}`")
                     st.code(row['prompt_text'], language="text")
@@ -237,6 +239,8 @@ with tab_submit:
             
             title = st.text_input("Prompt Title")
             
+            model_used = st.text_input("AI Model Used (e.g., GPT-4, Claude 3, Gemini Pro)")
+            
             selected_tags = []
             if category and category != "Miscellaneous":
                 st.write("Step 2: Select relevant tags")
@@ -261,6 +265,7 @@ with tab_submit:
                         "title": title,
                         "prompt_text": prompt_text,
                         "category": category,
+                        "model": model_used,
                         "tags": tags_string,
                         "submitted_by_id": st.session_state.user_id,
                         "username": st.session_state.username,
@@ -287,6 +292,8 @@ with tab_admin:
                 with st.container(border=True):
                     st.subheader(f"'{row['title']}' by {row['username']}")
                     st.markdown(f"**Category:** {row['category']}")
+                    if row['model']:
+                        st.markdown(f"**Model:** {row['model']}")
                     if row['tags']:
                         st.markdown(f"**Tags:** `{row['tags']}`")
                     st.code(row['prompt_text'], language='text')
