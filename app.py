@@ -13,6 +13,8 @@ def hash_password(password):
     """Hashes a password for storing."""
     return hashlib.sha256(password.encode()).hexdigest()
 
+conn = st.connection("supabase", type=SupabaseConnection)
+
 def log_metric(event_type, details={}):
     """Logs a usage event to the usage_metrics table."""
     try:
@@ -26,10 +28,7 @@ def log_metric(event_type, details={}):
             "details": details
         }).execute()
     except Exception as e:
-        # Silently fail to avoid crashing the app for a logging error
         print(f"Error logging metric: {e}")
-
-conn = st.connection("supabase", type=SupabaseConnection)
 
 try:
     SLACK_CLIENT_ID = st.secrets["SLACK_CLIENT_ID"]
@@ -182,9 +181,14 @@ with tab_view:
         if filtered_df.empty:
             st.warning("No prompts match your current search criteria.")
         else:
+            if 'viewed_prompts' not in st.session_state:
+                st.session_state.viewed_prompts = set()
+
             for index, row in filtered_df.iterrows():
-                with st.expander(f"**{row['title']}** (Category: {row['category']})", expanded=False) as expander:
-                    log_metric("prompt_view", {"prompt_id": row['id'], "prompt_title": row['title']})
+                with st.expander(f"**{row['title']}** (Category: {row['category']})", expanded=False):
+                    if row['id'] not in st.session_state.viewed_prompts:
+                        log_metric("prompt_view", {"prompt_id": row['id'], "prompt_title": row['title']})
+                        st.session_state.viewed_prompts.add(row['id'])
                     
                     st.markdown(f"*Submitted by: {row['username']}*")
                     if row['model']:
