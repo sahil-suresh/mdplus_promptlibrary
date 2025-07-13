@@ -13,6 +13,22 @@ def hash_password(password):
     """Hashes a password for storing."""
     return hashlib.sha256(password.encode()).hexdigest()
 
+def log_metric(event_type, details={}):
+    """Logs a usage event to the usage_metrics table."""
+    try:
+        user_id = st.session_state.get("user_id", "anonymous")
+        username = st.session_state.get("username", "anonymous")
+        
+        conn.client.table("usage_metrics").insert({
+            "user_id": user_id,
+            "username": username,
+            "event_type": event_type,
+            "details": details
+        }).execute()
+    except Exception as e:
+        # Silently fail to avoid crashing the app for a logging error
+        print(f"Error logging metric: {e}")
+
 conn = st.connection("supabase", type=SupabaseConnection)
 
 try:
@@ -38,6 +54,9 @@ if 'logged_in' not in st.session_state:
     st.session_state.user_id = 0
     st.session_state.role = ""
 
+if 'session_logged' not in st.session_state:
+    log_metric("app_access")
+    st.session_state.session_logged = True
 
 with st.sidebar:
     st.title("User Hub")
@@ -153,6 +172,9 @@ with tab_view:
         if selected_tags:
             for tag in selected_tags:
                 filtered_df = filtered_df[filtered_df['tags'].str.contains(tag, case=False, na=False)]
+                
+        if search_query or selected_tags:
+            log_metric("search", {"query": search_query, "tags": selected_tags})
 
         st.markdown(f"---")
         st.write(f"**{len(filtered_df)} prompts found**")
@@ -161,7 +183,9 @@ with tab_view:
             st.warning("No prompts match your current search criteria.")
         else:
             for index, row in filtered_df.iterrows():
-                with st.expander(f"**{row['title']}** (Category: {row['category']})", expanded=False):
+                with st.expander(f"**{row['title']}** (Category: {row['category']})", expanded=False) as expander:
+                    log_metric("prompt_view", {"prompt_id": row['id'], "prompt_title": row['title']})
+                    
                     st.markdown(f"*Submitted by: {row['username']}*")
                     if row['model']:
                         st.markdown(f"**Model:** {row['model']}")
