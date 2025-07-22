@@ -123,6 +123,7 @@ with st.sidebar:
 st.image("logo.png", width=250)
 st.title("AI Prompt Library")
 st.markdown("Discover, share, and vote on the best AI prompts.")
+st.markdown("For any issues, please reach out to sahil.suresh@tufts.edu")
 
 tab_view, tab_submit, tab_admin = st.tabs(["View Prompts", "Submit a Prompt", "Admin Panel"])
 
